@@ -1,0 +1,2 @@
+cd C:\Users\Markiyo\Desktop\Nueva carpeta (2)\mi-app-backend
+C:\Users\Markiyo\Desktop\Nueva carpeta (2)\mi-app-backend>npm start

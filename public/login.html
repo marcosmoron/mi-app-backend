@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .login-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            width: 90%;
+            max-width: 400px;
+        }
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+            box-sizing: border-box;
+        }
+        .login-button {
+            @apply bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline;
+            width: 100%;
+        }
+        .error-message {
+            color: red;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2 class="text-2xl font-semibold mb-4 text-gray-800">Iniciar Sesión</h2>
+        <form id="login-form" onsubmit="login(event)">
+            <input type="email" id="email" class="input-field" placeholder="Email" required>
+            <input type="password" id="password" class="input-field" placeholder="Contraseña" required>
+            <button type="submit" class="login-button">Acceder</button>
+        </form>
+        <div id="mensaje" class="error-message"></div>
+    </div>
+
+    <script>
+        async function login(e) {
+            e.preventDefault();
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const mensajeDiv = document.getElementById("mensaje");
+
+            if (email === "goat@gmail.com" && password === "123456") {
+                localStorage.setItem('isAdmin', 'true');  // Flag for admin
+                window.location.href = "app.html"; // Redirige a la página de admin
+                return;
+            }
+
+            try {
+                const res = await fetch('http://192.168.100.1/api/auth/login', {  // Mantén tu URL
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('isAdmin', 'false'); // Flag for regular user
+                    window.location.href = "app.html";
+                } else {
+                    mensajeDiv.textContent = data.message || "Error al iniciar sesión.";
+                }
+
+            } catch (error) {
+                console.error("Error al iniciar sesión:", error);
+                mensajeDiv.textContent = "No se pudo conectar al servidor.";
+            }
+        }
+    </script>
+</body>
+</html>
