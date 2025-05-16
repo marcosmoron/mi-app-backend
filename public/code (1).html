@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GOAT APP DEMO 1 - Gestión Edificio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        /* Iconos personalizados para UFs y Menú */
+        .icono-departamento::before { content: '🏠'; margin-right: 0.5rem; }
+        .icono-cochera::before { content: '🚗'; margin-right: 0.5rem; }
+        .icono-baulera::before { content: '📦'; margin-right: 0.5rem; }
+        .icono-fondos::before { content: '💰'; margin-right: 0.5rem; }
+
+        .menu-principal button {
+            background-color: #2563eb; /* bg-blue-600 */
+            color: #fff; /* text-white */
+            font-weight: bold; /* font-bold */
+            padding: 0.5rem 1rem; /* py-2 px-4 */
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06); /* shadow-md */
+            outline: none; /* focus:outline-none */
+            transition: background-color 0.15s ease-in-out; /* transition duration-150 ease-in-out */
+            margin: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: auto; /* Ancho automático basado en contenido */
+            min-width: 180px; /* Ancho mínimo para consistencia */
+        }
+        .menu-principal button:hover {
+            background-color: #1d4ed8; /* hover:bg-blue-700 */
+        }
+        .menu-principal button:focus {
+            box-shadow: 0 0 0 2px rgba(96,165,250,0.75); /* focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 */
+        }
+        .menu-principal button i { /* Para iconos de FontAwesome */
+            margin-right: 0.75rem;
+        }
+         .menu-principal button span.icono-fondos { /* Para el ícono de fondos que es un emoji */
+             font-size: 1.1em; /* Ajustar tamaño si es necesario */
+         }
+
+
+        .tabla-uf {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+
+        .tabla-uf th, .tabla-uf td {
+            padding: 0.85rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .tabla-uf th {
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        .tabla-uf tbody tr:hover {
+            background-color: #f3f4f6;
+        }
+        .tabla-uf tbody tr.uf-ocupada:hover {
+            background-color: #fef9c3;
+        }
+        .tabla-uf td a, .uf-link, .action-link {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        /* Estilo para resaltar temporalmente */
+        .highlight-temporarily {
+            background-color: #a5f3fc !important; /* Tailwind cyan-200 */
+            transition: background-color 0.5s ease-out;
+        }
+
+        .uf-desocupada .assign-button {
+            background-color: #22c55e; /* bg-green-500 */
+            color: #fff; /* text-white */
+            font-size: 0.75rem; /* text-xs */
+            padding: 0.25rem 0.75rem; /* py-1 px-3 */
+            border-radius: 0.375rem; /* rounded-md */
+            box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); /* shadow-sm */
+            transition: background-color 0.2s; /* transition-colors */
+        }
+        .editable-input, .editable-select {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid #d1d5db; /* border-gray-300 */
+            border-radius: 0.375rem; /* rounded-md */
+            box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); /* shadow-sm */
+        }
+        .editable-input:focus, .editable-select:focus {
+            outline: none;
+            border-color: #6366f1; /* focus:border-indigo-500 */
+            box-shadow: 0 0 0 2px #6366f1;
+        }
+        .editable-textarea {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid #d1d5db; /* border-gray-300 */
+            border-radius: 0.375rem; /* rounded-md */
+            box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); /* shadow-sm */
+            min-height: 100px;
+        }
+        .editable-textarea:focus {
+            outline: none;
+            border-color: #6366f1; /* focus:border-indigo-500 */
+            box-shadow: 0 0 0 2px #6366f1;
+        }
+        .validation-error-text {
+            color: #ef4444; /* text-red-500 */
+            font-size: 0.75rem; /* text-xs */
+            margin-top: 0.25rem; /* mt-1 */
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(31, 41, 55, 0.75); /* bg-gray-800 bg-opacity-75 */
+            overflow-y: auto;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            transition: opacity 0.3s;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); /* shadow-xl */
+            width: 100%;
+            max-width: 32rem; /* max-w-lg, ajusta si es necesario para el panel admin */
+            margin-left: auto;
+            margin-right: auto;
+            transform: scale(0.95);
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        .modal.active .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+        .modal.active {
+            opacity: 1;
+        }
+
+        #notification-area {
+            position: fixed;
+            top: 1.25rem; /* top-5 */
+            right: 1.25rem; /* right-5 */
+            z-index: 100;
+            width: 100%;
+            max-width: 20rem; /* max-w-xs */
+        }
+        @media (min-width: 640px) {
+            #notification-area {
+                max-width: 24rem; /* sm:max-w-sm */
+            }
+        }
+        .notification {
+            color: #fff;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); /* shadow-xl */
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease-in-out;
+            transform: none;
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+        .notification.show {
+            opacity: 1;
+            max-height: 100px; /* Ajustar si el mensaje es muy largo */
+        }
+        .notification.bg-success { background-color: #22c55e; /* bg-green-500 */ }
+        .notification.bg-error   { background-color: #ef4444; /* bg-red-500 */ }
+        .notification.bg-info    { background-color: #3b82f6; /* bg-blue-500 */ }
+        .notification i { margin-right: 0.75rem; font-size: 1.125rem; }
+
+        .summary-card {
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); /* shadow-lg */
+            text-align: center;
+        }
+        .summary-card h3 {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* font-semibold */
+            color: #374151; /* text-gray-700 */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        .summary-card p {
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: bold; /* font-bold */
+            color: #2563eb; /* text-blue-600 */
+        }
+         .summary-card .text-red-600 {
+            color: #dc2626;
+        }
+        .uf-ocupada-simple {
+            background-color: #fefce8;
+            border-left: 4px solid #facc15;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <div id="notification-area"></div>
+    <input type="file" id="import-file-input" accept=".json" style="display: none;">
+
+    <div class="container mx-auto p-4 md:p-6">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-bold text-blue-700">Gestión Integral de Edificios</h1>
+            <p class="text-lg text-gray-600 mt-1">Administre unidades funcionales e inquilinos de forma eficiente.</p>
+        </header>
+
+        <section class="menu-principal flex flex-wrap justify-center items-center mb-10 p-4 bg-white rounded-lg shadow-md">
+            <button onclick="mostrarDepartamentos()">
+                <i class="fas fa-building"></i> Departamentos
+            </button>
+            <button onclick="mostrarCocheras()">
+                <i class="fas fa-car-side"></i> Cocheras
+            </button>
+            <button onclick="mostrarBauleras()">
+                <i class="fas fa-archive"></i> Bauleras
+            </button>
+            <button onclick="mostrarInquilinos()">
+                <i class="fas fa-users-cog"></i> Inquilinos
+            </button>
+            <button onclick="mostrarFondosTotales()">
+                <span class="icono-fondos"></span> Fondos Totales
+            </button>
+            <button onclick="abrirAdminPanelConPrompt()" class="bg-purple-600 hover:bg-purple-700">
+                <i class="fas fa-user-shield"></i> Panel Admin
+            </button>
+        </section>
+
+        <section id="departamentos" class="mb-12 bg-white p-6 rounded-lg shadow-lg" style="display: none;">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-3">Listado de Departamentos</h2>
+            <div id="info-uf-seleccionada" class="mb-4 p-3 bg-blue-50 text-blue-700 rounded-md border border-blue-200" style="display:none;"></div>
+            <div class="overflow-x-auto">
+                <table class="tabla-uf min-w-full">
+                    <thead>
+                        <tr>
+                            <th>UF</th>
+                            <th>Inquilino</th>
+                            <th>Último Pago</th>
+                            <th>Deudas</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-departamentos-body">
+                        <!-- Las filas se generan dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="empty-state-departamentos" class="text-center py-8 text-gray-500" style="display:none;">
+                <i class="fas fa-folder-open fa-3x mb-3"></i>
+                <p>No hay departamentos para mostrar.</p>
+            </div>
+            <button onclick="ocultarSecciones()" class="mt-6 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors">Volver al Menú</button>
+        </section>
+
+        <section id="cocheras" class="mb-12 bg-white p-6 rounded-lg shadow-lg" style="display: none;">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-3">Listado de Cocheras</h2>
+            <div id="info-cochera-seleccionada" class="mb-4 p-3 bg-blue-50 text-blue-700 rounded-md border border-blue-200" style="display:none;"></div>
+            <div id="lista-cocheras" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+                <!-- Las cocheras se generan dinámicamente -->
+            </div>
+            <div id="empty-state-cocheras" class="text-center py-8 text-gray-500" style="display:none;">
+                <i class="fas fa-car-alt fa-3x mb-3"></i>
+                <p>No hay cocheras para mostrar.</p>
+            </div>
+            <button onclick="ocultarSecciones()" class="mt-6 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors">Volver al Menú</button>
+        </section>
+
+        <section id="bauleras" class="mb-12 bg-white p-6 rounded-lg shadow-lg" style="display: none;">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-3">Listado de Bauleras</h2>
+            <div id="info-baulera-seleccionada" class="mb-4 p-3 bg-blue-50 text-blue-700 rounded-md border border-blue-200" style="display:none;"></div>
+            <div id="lista-bauleras" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+                <!-- Las bauleras se generan dinámicamente -->
+            </div>
+             <div id="empty-state-bauleras" class="text-center py-8 text-gray-500" style="display:none;">
+                <i class="fas fa-box-open fa-3x mb-3"></i>
+                <p>No hay bauleras para mostrar.</p>
+            </div>
+            <button onclick="ocultarSecciones()" class="mt-6 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors">Volver al Menú</button>
+        </section>
+
+        <section id="inquilinos" class="bg-white p-6 rounded-lg shadow-lg" style="display: none;">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 pb-3 border-b">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-3 sm:mb-0">Perfiles de Inquilinos</h2>
+                <button onclick="mostrarFormularioNuevoInquilino()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-5 rounded-lg shadow-md flex items-center transition-colors">
+                    <i class="fas fa-user-plus mr-2"></i> Agregar Inquilino
+                </button>
+            </div>
+            <div class="mb-6">
+                <input type="text" id="busqueda" placeholder="Buscar por Nombre, UF, Piso, Teléfono, Mail..." class="w-full p-3 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm transition-colors">
+            </div>
+            <div id="resultados-inquilinos" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Los perfiles de inquilinos se generan dinámicamente -->
+            </div>
+             <div id="empty-state-inquilinos" class="text-center py-10 text-gray-500" style="display:none;">
+                <i class="fas fa-users-slash fa-3x mb-3"></i>
+                <p>No se encontraron inquilinos o no hay inquilinos registrados.</p>
+            </div>
+            <button onclick="ocultarSecciones()" class="mt-8 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors">Volver al Menú</button>
+        </section>
+
+        <section id="perfil-inquilino" class="bg-white p-6 rounded-lg shadow-lg" style="display: none;">
+            <h2 id="perfil-inquilino-titulo" class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-3">Perfil de Inquilino</h2>
+            <div id="datos-perfil" class="mb-6">
+                <!-- El perfil del inquilino se genera dinámicamente -->
+            </div>
+            <div id="form-validation-summary" class="mb-4 p-3 bg-red-50 text-red-700 rounded-md border border-red-200" style="display:none;"></div>
+            <div class="flex flex-wrap gap-3 items-center">
+                <button onclick="editarDatosInquilinoActual()" id="editar-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-md transition-colors">Editar Datos</button>
+                <button onclick="guardarCambiosInquilinoActual()" id="guardar-btn" style="display:none;" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-5 rounded-lg shadow-md transition-colors">Guardar Cambios</button>
+                <button onclick="guardarNuevoInquilino()" id="guardar-nuevo-btn" style="display:none;" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-lg shadow-md transition-colors">Guardar Nuevo Inquilino</button>
+                <!-- Botón de eliminar se añade dinámicamente o se controla su visibilidad -->
+                <button onclick="cancelarEdicionInquilinoActual()" id="cancelar-btn" style="display:none;" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-5 rounded-lg shadow-md transition-colors">Cancelar</button>
+                <button onclick="mostrarInquilinos()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-md ml-auto transition-colors">Volver a Lista</button>
+            </div>
+        </section>
+
+        <section id="fondos-totales" class="mb-12 bg-white p-6 rounded-lg shadow-lg" style="display: none;">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-3">Resumen Financiero del Edificio</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="summary-card">
+                    <h3><i class="fas fa-file-invoice-dollar mr-2"></i>Total Deudas Inquilinos</h3>
+                    <p id="total-deudas-display" class="text-red-600">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3><i class="fas fa-chart-line mr-2"></i>Economía del Edificio</h3>
+                    <p id="economia-edificio-display">N/A</p>
+                    <small class="text-xs text-gray-500">(Función en desarrollo)</small>
+                </div>
+                <div class="summary-card">
+                    <h3><i class="fas fa-receipt mr-2"></i>Gastos Totales</h3>
+                    <p id="gastos-totales-display">N/A</p>
+                     <small class="text-xs text-gray-500">(Función en desarrollo)</small>
+                </div>
+            </div>
+            <button onclick="ocultarSecciones()" class="mt-8 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors">Volver al Menú</button>
+        </section>
+
+
+        <div id="modal-asignar-uf" class="modal opacity-0 pointer-events-none">
+            <div class="modal-content">
+                <h3 class="text-xl font-semibold mb-5 text-gray-700">Asignar <span id="modal-uf-code-display" class="font-bold text-indigo-600"></span> a Inquilino</h3>
+                <div class="mb-4">
+                    <label for="select-inquilino-asignar" class="block text-sm font-medium text-gray-700 mb-1">Seleccionar Inquilino:</label>
+                    <select id="select-inquilino-asignar" class="editable-select">
+                        <!-- Las opciones se generan dinámicamente -->
+                    </select>
+                </div>
+                <div class="flex justify-end gap-3 mt-8">
+                    <button onclick="confirmarAsignacionUF()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors">Confirmar</button>
+                    <button onclick="cerrarModalAsignarUF()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-md transition-colors">Cancelar</button>
+                </div>
+            </div>
+        </div>
+        
+        <section id="admin-panel" class="modal opacity-0 pointer-events-none">
+            <div class="modal-content max-w-md"> <!-- Ajustado max-w-md -->
+                <h3 class="text-xl font-semibold mb-6 text-gray-700 border-b pb-3">Panel de Administración</h3>
+                
+                <div class="space-y-4">
+                    <button onclick="activarImportacionJSON()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-md flex items-center justify-center transition-colors">
+                        <i class="fas fa-file-import mr-2"></i> Importar Datos (JSON)
+                    </button>
+                    <button onclick="exportarDatosJSON()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-md flex items-center justify-center transition-colors">
+                        <i class="fas fa-file-export mr-2"></i> Exportar Datos (JSON)
+                    </button>
+                    <button onclick="confirmarGenerarDatosDemoAdmin()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-md flex items-center justify-center transition-colors mt-6">
+                        <i class="fas fa-magic mr-2"></i> Generar Datos de Demo (25 Inq.)
+                    </button>
+                     <button onclick="confirmarBorrarTodosLosDatos()" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-2.5 px-5 rounded-lg shadow-md flex items-center justify-center transition-colors mt-2">
+                        <i class="fas fa-trash-alt mr-2"></i> Borrar TODOS los Datos
+                    </button>
+                </div>
+
+                <div class="mt-8 pt-6 border-t">
+                    <h4 class="text-lg font-semibold mb-3 text-gray-600">Historial de Operaciones</h4>
+                    <div id="historial-operaciones-lista" class="max-h-48 overflow-y-auto bg-gray-50 p-3 rounded-md text-sm">
+                        <p class="text-gray-500">No hay operaciones registradas aún.</p>
+                    </div>
+                    <button onclick="confirmarRestaurarBackup()" id="btn-restaurar-backup" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center justify-center transition-colors mt-4" style="display: none;">
+                        <i class="fas fa-undo mr-2"></i> Restaurar Datos (Desde última importación/operación)
+                    </button>
+                </div>
+
+                <div class="flex justify-end mt-8">
+                    <button onclick="cerrarAdminPanel()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-md transition-colors">Cerrar Panel</button>
+                </div>
+            </div>
+        </section>
+    </div> <!-- Fin del div.container -->
+
+    <footer class="text-center text-sm text-gray-500 mt-12 py-6 border-t border-gray-200">
+        Gestión de Edificios &copy; <span id="currentYear"></span>. GOAT Solutions.
+    </footer>
+
+    <script>
+        // GOAT APP DEMO 1 SCRIPT
+        // --- CONSTANTES Y DATOS GLOBALES ---
+        let inquilinos = [];
+        let inquilinoEditandoId = null;
+        let esNuevoInquilino = false;
+
+        const MAX_DEPARTAMENTOS = 50;
+        const MAX_COCHERAS = 30;
+        const BAULERAS_LETRAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
+
+        let ufParaAsignar = null;
+        let ufTipoParaAsignar = null; 
+
+        const STORAGE_KEY = 'gestionEdificioProfesionalData_GoatAppDemo1'; // Clave única para esta demo
+        const ADMIN_PASSWORD = "admin"; 
+        const HISTORIAL_OPERACIONES_KEY = 'gestionEdificioHistorial_GoatAppDemo1';
+        const BACKUP_KEY_PREFIX = 'gestionEdificioBackup_GoatAppDemo1_';
+        const MAX_HISTORIAL_ENTRADAS = 10;
+        let ultimaClaveBackup = null;
+
+        // --- PERSISTENCIA DE DATOS (localStorage) ---
+        function guardarDatosAlmacenamientoLocal() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(inquilinos));
+            } catch (e) {
+                console.error("Error guardando datos en localStorage:", e);
+                showNotification("Error al guardar datos. Puede que el almacenamiento esté lleno.", "error");
+            }
+        }
+
+        function cargarDatosDesdeAlmacenamientoLocal() {
+            const datosGuardados = localStorage.getItem(STORAGE_KEY);
+            if (datosGuardados) {
+                try {
+                    inquilinos = JSON.parse(datosGuardados);
+                    inquilinos.forEach(inq => {
+                        if (!Array.isArray(inq.unidades_funcionales)) {
+                            inq.unidades_funcionales = [];
+                        }
+                    });
+                    return true; 
+                } catch(e) {
+                    console.error("Error parseando datos de localStorage:", e);
+                    localStorage.removeItem(STORAGE_KEY); 
+                    showNotification("Error al cargar datos guardados. Se iniciará con datos vacíos.", "error");
+                    return false; 
+                }
+            }
+            return false; 
+        }
+
+        // --- GENERACIÓN DE DATOS ALEATORIOS ---
+        function generarInquilinosAleatorios(cantidad) {
+            const nuevosInquilinos = [];
+            const nombres = ['Juan', 'María', 'Carlos', 'Laura', 'Sofía', 'Pedro', 'Ana', 'Luis', 'Isabel', 'Diego', 'Valeria', 'Miguel', 'Elena', 'Javier', 'Carmen'];
+            const apellidos = ['Pérez', 'Gómez', 'Rodríguez', 'López', 'Fernández', 'Martínez', 'Sánchez', 'Ramírez', 'Díaz', 'Álvarez', 'Torres', 'Ruiz', 'Jiménez', 'Moreno', 'Alonso'];
+
+            for (let i = 1; i <= cantidad; i++) {
+                const nombre = nombres[Math.floor(Math.random() * nombres.length)];
+                const apellido = apellidos[Math.floor(Math.random() * apellidos.length)];
+                const email = `${nombre.toLowerCase()}.${apellido.toLowerCase()}${Math.floor(Math.random() * 100)}@example.com`;
+                const telefono = '11' + Math.floor(20000000 + Math.random() * 70000000);
+                const documento = Math.floor(20000000 + Math.random() * 25000000).toString();
+                const fechaIngreso = generarFechaAleatoria(new Date(2018, 0, 1), new Date());
+                const fechaNacimiento = generarFechaAleatoria(new Date(1950, 0, 1), new Date(2002, 11, 31));
+
+                const nuevoInquilino = {
+                    _id: `inquilino_${Date.now()}_${i}`,
+                    nombre,
+                    apellido,
+                    nombre_apellido: `${nombre} ${apellido}`,
+                    email,
+                    telefono,
+                    documento,
+                    piso: (Math.random() < 0.8) ? (Math.floor(Math.random() * 15) + 1).toString() : '',
+                    fechaIngreso: fechaIngreso.toISOString().split('T')[0],
+                    fechaNacimiento: fechaNacimiento.toISOString().split('T')[0],
+                    unidades_funcionales: generarUFsAleatoriasComoCadenas(),
+                    ultimo_pago: (Math.random() < 0.7) ? generarFechaAleatoria(new Date(new Date().setMonth(new Date().getMonth() - 2)), new Date()).toISOString().split('T')[0] : '',
+                    deudas: (Math.random() < 0.3) ? (Math.random() * 50000).toFixed(2) : "0.00",
+                    observaciones: (Math.random() < 0.2) ? `Observación de prueba para ${nombre} ${apellido}.` : ''
+                };
+                nuevosInquilinos.push(nuevoInquilino);
+            }
+            return nuevosInquilinos;
+        }
+
+        function generarUFsAleatoriasComoCadenas() {
+            const ufs = [];
+            if (Math.random() < 0.95) ufs.push(generarDepartamentoAleatorioComoCadena());
+            if (Math.random() < 0.5) ufs.push(generarCocheraAleatoriaComoCadena());
+            if (Math.random() < 0.3) ufs.push(generarBauleraAleatoriaComoCadena());
+            return [...new Set(ufs)].filter(uf => uf); 
+        }
+
+        function generarDepartamentoAleatorioComoCadena() {
+            return `UF ${String(Math.floor(Math.random() * MAX_DEPARTAMENTOS) + 1).padStart(3, '0')}`;
+        }
+
+        function generarCocheraAleatoriaComoCadena() {
+            return `C ${String(Math.floor(Math.random() * MAX_COCHERAS) + 1).padStart(2, '0')}`;
+        }
+
+        function generarBauleraAleatoriaComoCadena() {
+            return `B ${BAULERAS_LETRAS[Math.floor(Math.random() * BAULERAS_LETRAS.length)]}`;
+        }
+
+        function generarFechaAleatoria(inicio, fin) {
+            return new Date(inicio.getTime() + Math.random() * (fin.getTime() - inicio.getTime()));
+        }
+
+        // --- FUNCIONES UTILITARIAS ---
+        function getTenantByUF(ufId, excludeTenantIndex = -1) {
+            for (let i = 0; i < inquilinos.length; i++) {
+                if (i === excludeTenantIndex) continue;
+                if (inquilinos[i].unidades_funcionales && inquilinos[i].unidades_funcionales.includes(ufId)) {
+                    return { tenant: inquilinos[i], index: i };
+                }
+            }
+            return null;
+        }
+
+        function formatCurrency(value) {
+            const num = parseFloat(value);
+            return isNaN(num) ? "-" : `$${num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+        
+        function clearInfoMessages() {
+            ['info-uf-seleccionada', 'info-cochera-seleccionada', 'info-baulera-seleccionada'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.style.display = 'none';
+                    el.textContent = '';
+                }
+            });
+        }
+
+        function showNotification(message, type = 'success', duration = 3500) {
+            const notificationArea = document.getElementById('notification-area');
+            if (!notificationArea) return;
+
+            const notificationId = 'notif-' + Date.now();
+            const bgColorClass = type === 'success' ? 'bg-success' : (type === 'error' ? 'bg-error' : 'bg-info');
+            const iconHTML = type === 'success' ? '<i class="fas fa-check-circle"></i>' : 
+                             (type === 'error' ? '<i class="fas fa-times-circle"></i>' : '<i class="fas fa-info-circle"></i>');
+
+            const notificationDiv = document.createElement('div');
+            notificationDiv.id = notificationId;
+            notificationDiv.className = `notification ${bgColorClass}`;
+            notificationDiv.innerHTML = `${iconHTML}<span>${message}</span>`;
+            notificationDiv.setAttribute('role', 'alert');
+            
+            notificationArea.appendChild(notificationDiv);
+
+            requestAnimationFrame(() => { 
+                notificationDiv.classList.add('show');
+            });
+
+            setTimeout(() => {
+                notificationDiv.classList.remove('show');
+                setTimeout(() => {
+                    if (notificationDiv.parentNode) {
+                        notificationDiv.remove();
+                    }
+                }, 500); 
+            }, duration);
+        }
+        
+        function clearValidationErrors(formId = 'datos-perfil') {
+            const form = document.getElementById(formId);
+            if (!form) return;
+            form.querySelectorAll('.validation-error-text').forEach(span => span.textContent = '');
+            form.querySelectorAll('.border-red-500').forEach(input => input.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500'));
+            const summary = document.getElementById('form-validation-summary');
+            if (summary) {
+                summary.style.display = 'none';
+                summary.innerHTML = '';
+            }
+        }
+
+        function displayValidationErrors(errors, formId = 'datos-perfil') {
+            clearValidationErrors(formId);
+            const summary = document.getElementById('form-validation-summary');
+            let summaryHTML = '<strong>Por favor, corrija los siguientes errores:</strong><ul>';
+            
+            for (const key in errors) {
+                const inputElement = document.getElementById(`edit-profile-${key}`); 
+                const errorSpan = document.getElementById(`error-profile-${key}`); 
+                if (inputElement) {
+                    inputElement.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+                    inputElement.setAttribute('aria-invalid', 'true');
+                    inputElement.setAttribute('aria-describedby', `error-profile-${key}`);
+                }
+                if (errorSpan) {
+                     errorSpan.textContent = errors[key];
+                }
+                summaryHTML += `<li>${errors[key]}</li>`;
+            }
+            summaryHTML += '</ul>';
+
+            if (summary && Object.keys(errors).length > 0) {
+                summary.innerHTML = summaryHTML;
+                summary.style.display = 'block';
+                summary.setAttribute('role', 'alert');
+            }
+        }
+
+        // --- FUNCIONES DE RENDERIZADO ---
+        function renderDepartamentosTable() {
+            const tbody = document.getElementById('tabla-departamentos-body');
+            const emptyState = document.getElementById('empty-state-departamentos');
+            if (!tbody || !emptyState) return;
+            tbody.innerHTML = ''; 
+            
+            if (MAX_DEPARTAMENTOS === 0 && inquilinos.filter(inq => inq.unidades_funcionales.some(uf => uf.startsWith("UF "))).length === 0) {
+                emptyState.style.display = 'block';
+                tbody.style.display = 'none';
+                return;
+            }
+            emptyState.style.display = 'none';
+            tbody.style.display = '';
+
+            for (let i = 1; i <= MAX_DEPARTAMENTOS; i++) {
+                const ufCode = `UF ${String(i).padStart(3, '0')}`;
+                const row = document.createElement('tr');
+                row.id = `uf-row-${ufCode.replace(/\s+/g, '-')}`; 
+
+                let inquilinoAsignadoNombre = "-";
+                let ultimoPago = "-";
+                let deudas = "-";
+                let inquilinoData = getTenantByUF(ufCode);
+                let inquilinoIdAsignado = null;
+
+                if (inquilinoData) {
+                    row.classList.add('uf-ocupada');
+                    inquilinoAsignadoNombre = inquilinoData.tenant.nombre_apellido;
+                    ultimoPago = inquilinoData.tenant.ultimo_pago || '-';
+                    deudas = formatCurrency(inquilinoData.tenant.deudas);
+                    inquilinoIdAsignado = inquilinoData.index; 
+                }
+
+                const tdUF = document.createElement('td');
+                const ufLinkHTML = `<a href="#" class="uf-link" data-action="ver-perfil-desde-uf" data-inquilino-index="${inquilinoIdAsignado !== null ? inquilinoIdAsignado : ''}"><span class="icono-departamento"></span>${ufCode}</a>`;
+                if (inquilinoIdAsignado !== null) {
+                    tdUF.innerHTML = ufLinkHTML;
+                } else {
+                    tdUF.innerHTML = `<span style="cursor:default;"><span class="icono-departamento"></span>${ufCode}</span>`;
+                }
+                row.appendChild(tdUF);
+
+                const tdInquilino = document.createElement('td');
+                if (inquilinoIdAsignado !== null) {
+                    tdInquilino.innerHTML = `<a href="#" class="uf-link" data-action="ver-perfil" data-inquilino-index="${inquilinoIdAsignado}">${inquilinoAsignadoNombre}</a>`;
+                } else {
+                    tdInquilino.textContent = inquilinoAsignadoNombre;
+                }
+                row.appendChild(tdInquilino);
+
+                row.appendChild(document.createElement('td')).textContent = ultimoPago;
+                row.appendChild(document.createElement('td')).textContent = deudas;
+                
+                const tdAcciones = document.createElement('td');
+                if (inquilinoIdAsignado !== null) {
+                    tdAcciones.innerHTML = `<button class="action-link text-xs text-indigo-600 hover:text-indigo-800 font-medium py-1 px-2 rounded hover:bg-indigo-100 transition-colors" data-action="editar-inquilino" data-inquilino-index="${inquilinoIdAsignado}"><i class="fas fa-edit mr-1"></i> Editar Inq.</button>`;
+                } else {
+                    tdAcciones.innerHTML = `<button class="action-link text-xs text-green-600 hover:text-green-800 font-medium py-1 px-2 rounded hover:bg-green-100 transition-colors" data-action="asignar-uf" data-uf-code="${ufCode}" data-uf-tipo="departamento"><i class="fas fa-plus-circle mr-1"></i> Asignar</button>`;
+                }
+                row.appendChild(tdAcciones);
+                tbody.appendChild(row);
+            }
+            if (tbody.children.length === 0 && MAX_DEPARTAMENTOS === 0) { // Ajuste lógico
+                 emptyState.style.display = 'block';
+                 tbody.style.display = 'none';
+            }
+        }
+
+        function renderSimpleUFList(ufType, containerId, emptyStateId, itemsOrMax, itemCodePrefix, itemIconClass) {
+            const listContainer = document.getElementById(containerId);
+            const emptyState = document.getElementById(emptyStateId);
+            if (!listContainer || !emptyState) return;
+            listContainer.innerHTML = '';
+
+            const items = Array.isArray(itemsOrMax) ? itemsOrMax : Array.from({ length: itemsOrMax }, (_, i) => i + 1);
+
+            if (items.length === 0 && inquilinos.filter(inq => inq.unidades_funcionales.some(uf => uf.startsWith(itemCodePrefix))).length === 0) { //Ajuste
+                emptyState.style.display = 'block';
+                listContainer.style.display = 'none';
+                return;
+            }
+            emptyState.style.display = 'none';
+            listContainer.style.display = 'grid';
+
+            let hasContent = false;
+            items.forEach(item => {
+                hasContent = true;
+                const itemIdentifier = ufType === 'baulera' ? item : String(item).padStart(2, '0');
+                const ufCode = `${itemCodePrefix}${itemIdentifier}`; 
+                const div = document.createElement('div');
+                div.id = `${ufType}-item-${ufCode.replace(/\s+/g, '-')}`; 
+                div.className = 'bg-white rounded-lg shadow-md p-4 flex flex-col items-start justify-between space-y-2 border hover:shadow-lg transition-shadow';
+                
+                const inquilinoData = getTenantByUF(ufCode);
+                let contentHtml = `<div class="flex items-center w-full"><span class="${itemIconClass}"></span><span class="font-semibold text-gray-700">${ufCode}</span></div>`;
+                
+                if (inquilinoData) {
+                    div.classList.add('uf-ocupada-simple');
+                    contentHtml += `<div class="text-xs text-gray-500 mt-1 w-full">Ocupado por: <a href="#" class="uf-link font-medium" data-action="ver-perfil" data-inquilino-index="${inquilinoData.index}">${inquilinoData.tenant.nombre_apellido}</a></div>`;
+                    div.style.cursor = 'pointer';
+                    div.dataset.action = "ver-perfil"; 
+                    div.dataset.inquilinoIndex = inquilinoData.index;
+                } else {
+                    div.classList.add('uf-desocupada');
+                    contentHtml += `<button class="assign-button mt-2 w-full text-xs" data-action="asignar-uf" data-uf-code="${ufCode}" data-uf-tipo="${ufType}">Asignar Inquilino</button>`;
+                }
+                div.innerHTML = contentHtml;
+                listContainer.appendChild(div);
+            });
+             if (!hasContent && items.length === 0) { // Ajuste lógico
+                emptyState.style.display = 'block';
+                listContainer.style.display = 'none';
+            }
+        }
+
+        function renderCocherasList() {
+            renderSimpleUFList('cochera', 'lista-cocheras', 'empty-state-cocheras', MAX_COCHERAS, 'C ', 'icono-cochera');
+        }
+
+        function renderBaulerasList() {
+            renderSimpleUFList('baulera', 'lista-bauleras', 'empty-state-bauleras', BAULERAS_LETRAS, 'B ', 'icono-baulera');
+        }
+        
+        function renderInquilinoCard(inquilino, index) {
+            let unidadesFuncionalesHTML = (inquilino.unidades_funcionales || []).map(uf => {
+                return `<span class="uf-link bg-indigo-100 text-indigo-700 text-xs font-semibold mr-1.5 mb-1 px-2.5 py-1 rounded-full inline-block hover:bg-indigo-200 transition-colors" data-action="ver-uf" data-uf-id="${uf}" data-inquilino-index="${index}">${uf}</span>`;
+            }).join('');
+
+            return `
+                <div class="bg-white rounded-xl shadow-lg p-5 hover:shadow-2xl transition-shadow duration-300 cursor-pointer border border-transparent hover:border-indigo-300" data-action="ver-perfil" data-inquilino-index="${index}">
+                    <h3 class="text-xl font-semibold text-indigo-600 mb-2.5">${inquilino.nombre_apellido}</h3>
+                    <div class="space-y-1.5 text-sm text-gray-600">
+                        <p><i class="fas fa-id-card fa-fw mr-2 text-gray-400"></i><span class="font-medium">Doc:</span> ${inquilino.documento || 'N/A'}</p>
+                        <p><i class="fas fa-building fa-fw mr-2 text-gray-400"></i><span class="font-medium">Piso Inq.:</span> ${inquilino.piso || 'N/A'}</p>
+                        <p><i class="fas fa-phone fa-fw mr-2 text-gray-400"></i><span class="font-medium">Teléfono:</span> ${inquilino.telefono || 'N/A'}</p>
+                        <p><i class="fas fa-envelope fa-fw mr-2 text-gray-400"></i><span class="font-medium">Mail:</span> ${inquilino.email || 'N/A'}</p>
+                    </div>
+                    <div class="mt-3.5 pt-3 border-t">
+                        <span class="font-medium text-gray-700 block mb-1.5 text-sm">UFs Asignadas:</span> 
+                        <div class="flex flex-wrap gap-1">
+                        ${unidadesFuncionalesHTML || '<span class="text-xs text-gray-400">Ninguna asignada</span>'}
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center text-xs mt-3.5 pt-2.5 border-t">
+                        <p class="text-gray-500">Últ. Pago: ${inquilino.ultimo_pago || '-'}</p>
+                        <p class="${parseFloat(inquilino.deudas) > 0 ? 'text-red-600' : 'text-green-600'} font-semibold">Deuda: ${formatCurrency(inquilino.deudas)}</p>
+                    </div>
+                </div>`;
+        }
+
+        function renderTenantProfile(tenantData, isEditing = false) {
+            const perfilDiv = document.getElementById('datos-perfil');
+            const tenant = tenantData || {}; 
+            clearValidationErrors(); 
+            
+            let ufsValue = (tenant.unidades_funcionales || []).join(', ');
+            let unidadesFuncionalesHTML;
+            if (isEditing) {
+                unidadesFuncionalesHTML = `<input type="text" id="edit-profile-unidades_funcionales" class="editable-input" value="${ufsValue}" placeholder="Ej: UF 001, C 02, B A">
+                                         <span id="error-profile-unidades_funcionales" class="validation-error-text"></span>`;
+            } else {
+                unidadesFuncionalesHTML = (tenant.unidades_funcionales || []).length > 0 ? 
+                    (tenant.unidades_funcionales || []).map((uf) => 
+                    `<span class="uf-link bg-indigo-200 text-indigo-800 rounded-full px-3.5 py-1.5 text-sm mr-2 mb-2 inline-block hover:bg-indigo-300 transition-colors" data-action="ver-uf" data-uf-id="${uf}" data-inquilino-index="${inquilinoEditandoId}">${uf}</span>`
+                ).join('') : '<span class="text-gray-500">Ninguna asignada</span>';
+            }
+
+            perfilDiv.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                    <div>
+                        <label for="edit-profile-nombre_apellido" class="block text-sm font-medium text-gray-700 mb-1">Nombre y Apellido:</label>
+                        ${isEditing ? `<input type="text" id="edit-profile-nombre_apellido" class="editable-input" value="${tenant.nombre_apellido || ''}"> <span id="error-profile-nombre_apellido" class="validation-error-text"></span>` : `<p class="mt-1 text-lg text-gray-800">${tenant.nombre_apellido || '-'}</p>`}
+                    </div>
+                     <div>
+                        <label for="edit-profile-documento" class="block text-sm font-medium text-gray-700 mb-1">Documento:</label>
+                        ${isEditing ? `<input type="text" id="edit-profile-documento" class="editable-input" value="${tenant.documento || ''}"> <span id="error-profile-documento" class="validation-error-text"></span>` : `<p class="mt-1 text-lg text-gray-800">${tenant.documento || '-'}</p>`}
+                    </div>
+                    <div>
+                        <label for="edit-profile-piso" class="block text-sm font-medium text-gray-700 mb-1">Piso Inquilino (Dpto. principal):</label>
+                        ${isEditing ? `<input type="text" id="edit-profile-piso" class="editable-input" value="${tenant.piso || ''}"> <span id="error-profile-piso" class="validation-error-text"></span>` : `<p class="mt-1 text-lg text-gray-800">${tenant.piso || '-'}</p>`}
+                    </div>
+                    <div>
+                        <label for="edit-profile-telefono" class="block text-sm font-medium text-gray-700 mb-1">Teléfono:</label>
+                        ${isEditing ? `<input type="tel" id="edit-profile-telefono" class="editable-input" value="${tenant.telefono || ''}"> <span id="error-profile-telefono" class="validation-error-text"></span>` : `<p class="mt-1 text-lg text-gray-800">${tenant.telefono || '-'}</p>`}
+                    </div>
+                    <div>
+                        <label for="edit-profile-email" class="block text-sm font-medium text-gray-700 mb-1">Mail:</label>
+                        ${isEditing ? `<input type="email" id="edit-profile-email" class="editable-input" value="${tenant.email || ''}"> <span id="error-profile-email" class="validation-error-text"></span>` : `<p class="mt-1 text-lg text-gray-800">${tenant.email || '-'}</p>`}
+                    </div>
+                    <div>
+                        <label for="edit-profile-fechaIngreso" class="block text-sm font-medium text-gray-700 mb-1">Fecha Ingreso (YYYY-MM-DD):</label>
+                        ${isEditing ? `<input type="date" id="edit-profile-fechaIngreso" class="editable-input" value="${tenant.fechaIngreso || ''}"> <span id="error-profile-fechaIngreso" class="validation-error-text"></span>` : `<p class="mt-1 text-lg text-gray-800">${tenant.fechaIngreso || '-'}</p>`}
+                    </div>
+                     <div>
+                        <label for="edit-profile-fechaNacimiento" class="block text-sm font-medium text-gray-700 mb-1">Fecha Nacimiento (YYYY-MM-DD):</label>
+                        ${isEditing ? `<input type="date" id="edit-profile-fechaNacimiento" class="editable-input" value="${tenant.fechaNacimiento || ''}"> <span id="error-profile-fechaNacimiento" class="validation-error-text"></span>` : `<p class="mt-1 text-lg text-gray-800">${tenant.fechaNacimiento || '-'}</p>`}
+                    </div>
+                    <div>
+                        <label for="edit-profile-ultimo_pago" class="block text-sm font-medium text-gray-700 mb-1">Último Pago (YYYY-MM-DD):</label>
+                        ${isEditing ? `<input type="date" id="edit-profile-ultimo_pago" class="editable-input" value="${tenant.ultimo_pago || ''}"> <span id="error-profile-ultimo_pago" class="validation-error-text"></span>` : `<p class="mt-1 text-lg text-gray-800">${tenant.ultimo_pago || '-'}</p>`}
+                    </div>
+                    <div>
+                        <label for="edit-profile-deudas" class="block text-sm font-medium text-gray-700 mb-1">Deudas ($):</label>
+                        ${isEditing ? `<input type="number" step="0.01" id="edit-profile-deudas" class="editable-input" value="${tenant.deudas || '0'}"> <span id="error-profile-deudas" class="validation-error-text"></span>` : `<p class="mt-1 text-lg ${parseFloat(tenant.deudas) > 0 ? 'text-red-600' : 'text-green-600'} font-semibold">${formatCurrency(tenant.deudas)}</p>`}
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="edit-profile-unidades_funcionales" class="block text-sm font-medium text-gray-700 mb-1">Unidades Funcionales (separadas por coma):</label>
+                        <div class="mt-1 text-gray-800" id="container-uf-links-perfil">${unidadesFuncionalesHTML}</div>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="edit-profile-observaciones" class="block text-sm font-medium text-gray-700 mb-1">Observaciones:</label>
+                        ${isEditing ? `<textarea id="edit-profile-observaciones" class="editable-textarea">${tenant.observaciones || ''}</textarea> <span id="error-profile-observaciones" class="validation-error-text"></span>` : `<p class="mt-1 text-base text-gray-800 whitespace-pre-wrap">${tenant.observaciones || '-'}</p>`}
+                    </div>
+                </div>
+            `;
+
+            const botonesDiv = perfilDiv.parentElement.querySelector('.flex.flex-wrap.gap-3.items-center');
+            const editarBtn = document.getElementById('editar-btn');
+            const guardarBtn = document.getElementById('guardar-btn');
+            const guardarNuevoBtn = document.getElementById('guardar-nuevo-btn');
+            const cancelarBtn = document.getElementById('cancelar-btn');
+            
+            let eliminarBtn = document.getElementById('eliminar-inquilino-btn');
+            if (!eliminarBtn && botonesDiv) { // Solo crear si no existe y el contenedor de botones está
+                eliminarBtn = document.createElement('button');
+                eliminarBtn.id = 'eliminar-inquilino-btn';
+                eliminarBtn.className = 'bg-pink-600 hover:bg-pink-700 text-white font-bold py-2.5 px-5 rounded-lg shadow-md transition-colors';
+                eliminarBtn.innerHTML = '<i class="fas fa-user-times mr-2"></i> Eliminar Inquilino';
+                eliminarBtn.onclick = confirmarEliminarInquilinoActual;
+                const volverBtn = botonesDiv.querySelector('button[onclick="mostrarInquilinos()"]');
+                if (volverBtn) {
+                     botonesDiv.insertBefore(eliminarBtn, volverBtn);
+                } else {
+                     botonesDiv.appendChild(eliminarBtn); 
+                }
+            }
+            
+            if(editarBtn) editarBtn.style.display = isEditing || esNuevoInquilino ? 'none' : 'inline-block';
+            if(guardarBtn) guardarBtn.style.display = isEditing && !esNuevoInquilino ? 'inline-block' : 'none';
+            if(guardarNuevoBtn) guardarNuevoBtn.style.display = esNuevoInquilino ? 'inline-block' : 'none';
+            if(cancelarBtn) cancelarBtn.style.display = isEditing || esNuevoInquilino ? 'inline-block' : 'none';
+            if(eliminarBtn) eliminarBtn.style.display = !isEditing && !esNuevoInquilino && inquilinoEditandoId !== null ? 'inline-block' : 'none';
+        }
+        
+        // --- FUNCIONES DE NAVEGACIÓN Y VISUALIZACIÓN DE SECCIONES ---
+        function ocultarSecciones() {
+            ['departamentos', 'cocheras', 'bauleras', 'inquilinos', 'perfil-inquilino', 'fondos-totales'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+            // No cerramos el panel de admin aquí, se cierra explícitamente
+            const adminPanel = document.getElementById('admin-panel');
+            if (adminPanel && adminPanel.classList.contains('active') && !event?.target?.closest('#admin-panel')) {
+                // No ocultar admin panel si la acción no es salir de él explícitamente
+            } else {
+                 // no resetear inquilinoEditandoId si solo estamos cambiando de sección principal
+            }
+            clearInfoMessages();
+            cerrarModalAsignarUF(); 
+        }
+
+        function mostrarDepartamentos() {
+            ocultarSecciones();
+            document.getElementById('departamentos').style.display = 'block';
+            renderDepartamentosTable();
+        }
+
+        function mostrarCocheras() {
+            ocultarSecciones();
+            document.getElementById('cocheras').style.display = 'block';
+            renderCocherasList();
+        }
+
+        function mostrarBauleras() {
+            ocultarSecciones();
+            document.getElementById('bauleras').style.display = 'block';
+            renderBaulerasList();
+        }
+
+        function mostrarInquilinos() {
+            ocultarSecciones();
+            document.getElementById('inquilinos').style.display = 'block';
+            const busquedaInput = document.getElementById('busqueda');
+            if (busquedaInput) busquedaInput.value = ''; 
+            realizarBusqueda(); 
+            inquilinoEditandoId = null; // Resetear al volver a la lista general
+            esNuevoInquilino = false;
+        }
+
+        function mostrarPerfilInquilino(tenantIndex) {
+            ocultarSecciones();
+            inquilinoEditandoId = tenantIndex; 
+            esNuevoInquilino = false;
+            const tituloEl = document.getElementById('perfil-inquilino-titulo');
+            if (tituloEl) tituloEl.textContent = "Perfil de Inquilino";
+            
+            const perfilSection = document.getElementById('perfil-inquilino');
+            if (perfilSection) perfilSection.style.display = 'block';
+            
+            if (inquilinos[tenantIndex]) {
+                renderTenantProfile(inquilinos[tenantIndex], false);
+            } else {
+                showNotification(`Error: No se encontró el inquilino con índice ${tenantIndex}.`, 'error');
+                mostrarInquilinos(); 
+            }
+        }
+        
+        function mostrarFormularioNuevoInquilino() {
+            ocultarSecciones();
+            inquilinoEditandoId = null; 
+            esNuevoInquilino = true;
+            const tituloEl = document.getElementById('perfil-inquilino-titulo');
+            if (tituloEl) tituloEl.textContent = "Agregar Nuevo Inquilino";
+            
+            const perfilSection = document.getElementById('perfil-inquilino');
+            if (perfilSection) perfilSection.style.display = 'block';
+            renderTenantProfile(null, true); 
+        }
+
+        function verUF(ufId, tenantIndexIfKnown) { 
+            let tenantData;
+            if (tenantIndexIfKnown !== undefined && tenantIndexIfKnown !== null && inquilinos[tenantIndexIfKnown]) {
+                 tenantData = { tenant: inquilinos[tenantIndexIfKnown], index: tenantIndexIfKnown };
+            } else {
+                 tenantData = getTenantByUF(ufId);
+            }
+            
+            let tenantName = "Desconocido";
+            if (tenantData) {
+                tenantName = tenantData.tenant.nombre_apellido;
+            }
+            
+            let targetSectionId = '', targetItemId = '', infoElementId = '';
+            let infoMessage = `Mostrando ${ufId}`;
+            if (tenantData) {
+                infoMessage += `, asignada a ${tenantName}.`;
+            } else {
+                infoMessage += `, actualmente desocupada.`;
+            }
+
+            if (ufId.startsWith('UF ')) { 
+                targetSectionId = 'departamentos'; 
+                targetItemId = `uf-row-${ufId.replace(/\s+/g, '-')}`; 
+                infoElementId = 'info-uf-seleccionada';
+            } else if (ufId.startsWith('C ')) { 
+                targetSectionId = 'cocheras'; 
+                targetItemId = `cochera-item-${ufId.replace(/\s+/g, '-')}`; 
+                infoElementId = 'info-cochera-seleccionada';
+            } else if (ufId.startsWith('B ')) { 
+                targetSectionId = 'bauleras'; 
+                targetItemId = `baulera-item-${ufId.replace(/\s+/g, '-')}`; 
+                infoElementId = 'info-baulera-seleccionada';
+            }
+
+            if (targetSectionId) {
+                ocultarSecciones(); 
+                const sectionElement = document.getElementById(targetSectionId);
+                if (sectionElement) sectionElement.style.display = 'block'; 
+                
+                if (targetSectionId === 'departamentos') renderDepartamentosTable();
+                else if (targetSectionId === 'cocheras') renderCocherasList();
+                else if (targetSectionId === 'bauleras') renderBaulerasList();
+
+                setTimeout(() => { 
+                    const itemElement = document.getElementById(targetItemId);
+                    const infoDiv = document.getElementById(infoElementId);
+                    if (infoDiv) {
+                        infoDiv.textContent = infoMessage;
+                        infoDiv.style.display = 'block';
+                    }
+                    if (itemElement) {
+                        itemElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        itemElement.classList.add('highlight-temporarily');
+                        setTimeout(() => itemElement.classList.remove('highlight-temporarily'), 2500);
+                    } else {
+                        console.warn(`Elemento para ${ufId} (ID: ${targetItemId}) no encontrado.`);
+                    }
+                }, 150); 
+            }
+        }
+
+        // --- SECCIÓN FONDOS TOTALES ---
+        function mostrarFondosTotales() {
+            ocultarSecciones();
+            document.getElementById('fondos-totales').style.display = 'block';
+            renderFondosTotales();
+        }
+
+        function renderFondosTotales() {
+            // ... (código de renderFondosTotales sin cambios) ...
+            let totalDeudas = 0;
+            let totalPagosSimulados = 0; 
+            let totalInquilinos = inquilinos.length;
+            let deudores = 0;
+            let pagosRecientesSimulados = 0;
+            let hoy = new Date();
+
+            inquilinos.forEach(inquilino => {
+                const deuda = parseFloat(inquilino.deudas);
+                if (!isNaN(deuda)) {
+                    totalDeudas += deuda;
+                    if (deuda > 0) deudores++;
+                }
+                if (inquilino.ultimo_pago) {
+                    const pagoDate = new Date(inquilino.ultimo_pago);
+                    if (!isNaN(pagoDate) && (hoy - pagoDate) / (1000 * 60 * 60 * 24) <= 30) {
+                        pagosRecientesSimulados++;
+                        totalPagosSimulados += deuda > 0 ? deuda : (Math.random() * 10000); 
+                    }
+                }
+            });
+
+            let economia = totalPagosSimulados - totalDeudas;
+            let economiaTexto = economia >= 0 ? `Positivo (simulado): ${formatCurrency(economia)}` :
+                                `Negativo (simulado): ${formatCurrency(economia)}`;
+
+            document.getElementById('total-deudas-display').textContent = formatCurrency(totalDeudas);
+            document.getElementById('economia-edificio-display').innerHTML =
+                `<span>${economiaTexto}</span>
+                <br>
+                <span class="text-xs text-gray-500">Pagos (simulados) recientes: ${pagosRecientesSimulados} / ${totalInquilinos}</span>
+                <br>
+                <span class="text-xs text-gray-500">Inquilinos con deuda: ${deudores}</span>`;
+            document.getElementById('gastos-totales-display').innerHTML =
+                `<span>N/A</span>
+                <br>
+                <span class="text-xs text-gray-400">Próximamente podrá registrar y visualizar gastos.</span>`;
+        }
+
+        // --- VALIDACIÓN DE DATOS DEL INQUILINO ---
+        function validarDatosInquilino(data, tenantIdToExclude = -1) {
+            // ... (código de validarDatosInquilino sin cambios) ...
+            const errors = {};
+            if (!data.nombre_apellido || data.nombre_apellido.trim() === "") {
+                errors.nombre_apellido = "El nombre y apellido son obligatorios.";
+            }
+            if (!data.documento || data.documento.trim() === "") {
+                errors.documento = "El documento es obligatorio.";
+            } else if (!/^\d+$/.test(data.documento.trim())) {
+                errors.documento = "El documento solo debe contener números.";
+            }
+
+            if (data.email && data.email.trim() !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+                errors.email = "El formato del mail no es válido.";
+            }
+            if (data.deudas && isNaN(parseFloat(data.deudas))) {
+                errors.deudas = "La deuda debe ser un número.";
+            }
+             if (data.telefono && data.telefono.trim() !== "" && !/^\d+$/.test(data.telefono.trim())) {
+                errors.telefono = "El teléfono solo debe contener números.";
+            }
+
+            const ufsToCheck = data.unidades_funcionales_array || [];
+            const conflictingUFs = [];
+            const invalidFormatUFs = [];
+
+            ufsToCheck.forEach(uf => {
+                const trimmedUf = uf.trim().toUpperCase();
+                if (!/^(UF\s\d{3}|C\s\d{2}|B\s[A-Z])$/.test(trimmedUf)) {
+                    if(trimmedUf !== "") invalidFormatUFs.push(trimmedUf);
+                } else {
+                    const existingTenantInfo = getTenantByUF(trimmedUf, tenantIdToExclude);
+                    if (existingTenantInfo) {
+                        conflictingUFs.push(`${trimmedUf} (asignada a ${existingTenantInfo.tenant.nombre_apellido})`);
+                    }
+                }
+            });
+
+            if (invalidFormatUFs.length > 0) {
+                 errors.unidades_funcionales = `Las siguientes UFs tienen un formato inválido: ${invalidFormatUFs.join(', ')}. Formatos: UF NNN, C NN, B L.`;
+            } else if (conflictingUFs.length > 0) { 
+                errors.unidades_funcionales = `Las siguientes UFs ya están asignadas: ${conflictingUFs.join(', ')}.`;
+            }
+            return errors;
+        }
+
+        // --- OPERACIONES CRUD PARA INQUILINOS ---
+        function editarDatosInquilinoActual() {
+            if (inquilinoEditandoId !== null && !esNuevoInquilino && inquilinos[inquilinoEditandoId]) {
+                renderTenantProfile(inquilinos[inquilinoEditandoId], true); 
+            }
+        }
+
+        function guardarCambiosInquilinoActual() {
+            // ... (código de guardarCambiosInquilinoActual sin cambios, ya incluye guardarDatosAlmacenamientoLocal()) ...
+            if (inquilinoEditandoId === null || esNuevoInquilino || !inquilinos[inquilinoEditandoId]) {
+                showNotification("Error: No hay un inquilino seleccionado para editar o el inquilino no existe.", "error");
+                return;
+            }
+
+            const ufsString = document.getElementById('edit-profile-unidades_funcionales').value;
+            const ufsArray = ufsString.split(',').map(uf => uf.trim().toUpperCase()).filter(uf => uf); 
+
+            const nombreCompleto = document.getElementById('edit-profile-nombre_apellido').value.trim();
+            let nombre = nombreCompleto;
+            let apellido = '';
+            const partesNombre = nombreCompleto.split(' ');
+            if (partesNombre.length > 1) {
+                nombre = partesNombre.slice(0, -1).join(' ');
+                apellido = partesNombre.slice(-1).join('');
+            }
+
+            const tenantDataToValidate = {
+                nombre_apellido: nombreCompleto,
+                documento: document.getElementById('edit-profile-documento').value.trim(),
+                piso: document.getElementById('edit-profile-piso').value.trim(),
+                telefono: document.getElementById('edit-profile-telefono').value.trim(),
+                email: document.getElementById('edit-profile-email').value.trim(),
+                fechaIngreso: document.getElementById('edit-profile-fechaIngreso').value,
+                fechaNacimiento: document.getElementById('edit-profile-fechaNacimiento').value,
+                ultimo_pago: document.getElementById('edit-profile-ultimo_pago').value,
+                deudas: document.getElementById('edit-profile-deudas').value.trim() || "0",
+                observaciones: document.getElementById('edit-profile-observaciones').value.trim(),
+                unidades_funcionales_array: ufsArray 
+            };
+            
+            const validationErrors = validarDatosInquilino(tenantDataToValidate, inquilinoEditandoId);
+            if (Object.keys(validationErrors).length > 0) {
+                displayValidationErrors(validationErrors);
+                showNotification("Por favor, corrija los errores en el formulario.", "error");
+                return;
+            }
+
+            const inquilinoActualizado = {
+                ...inquilinos[inquilinoEditandoId], 
+                nombre: nombre,
+                apellido: apellido,
+                nombre_apellido: nombreCompleto,
+                documento: tenantDataToValidate.documento,
+                piso: tenantDataToValidate.piso,
+                telefono: tenantDataToValidate.telefono,
+                email: tenantDataToValidate.email,
+                fechaIngreso: tenantDataToValidate.fechaIngreso,
+                fechaNacimiento: tenantDataToValidate.fechaNacimiento,
+                ultimo_pago: tenantDataToValidate.ultimo_pago,
+                deudas: tenantDataToValidate.deudas,
+                observaciones: tenantDataToValidate.observaciones,
+                unidades_funcionales: ufsArray
+            };
+            inquilinos[inquilinoEditandoId] = inquilinoActualizado;
+            guardarDatosAlmacenamientoLocal();
+
+            renderTenantProfile(inquilinos[inquilinoEditandoId], false); 
+            showNotification("Inquilino actualizado con éxito.", "success");
+            actualizarVistaActualSiEsNecesario();
+        }
+        
+        function guardarNuevoInquilino() {
+            // ... (código de guardarNuevoInquilino sin cambios, ya incluye guardarDatosAlmacenamientoLocal()) ...
+            if (!esNuevoInquilino) {
+                 showNotification("Error: No se está en modo de creación de nuevo inquilino.", "error");
+                return;
+            }
+
+            const ufsString = document.getElementById('edit-profile-unidades_funcionales').value;
+            const ufsArray = ufsString.split(',').map(uf => uf.trim().toUpperCase()).filter(uf => uf); 
+
+            const nombreCompleto = document.getElementById('edit-profile-nombre_apellido').value.trim();
+            let nombre = nombreCompleto;
+            let apellido = '';
+            const partesNombre = nombreCompleto.split(' ');
+            if (partesNombre.length > 1) {
+                nombre = partesNombre.slice(0, -1).join(' ');
+                apellido = partesNombre.slice(-1).join('');
+            }
+
+            const nuevoInquilinoDataToValidate = {
+                nombre_apellido: nombreCompleto,
+                documento: document.getElementById('edit-profile-documento').value.trim(),
+                piso: document.getElementById('edit-profile-piso').value.trim(),
+                telefono: document.getElementById('edit-profile-telefono').value.trim(),
+                email: document.getElementById('edit-profile-email').value.trim(),
+                fechaIngreso: document.getElementById('edit-profile-fechaIngreso').value,
+                fechaNacimiento: document.getElementById('edit-profile-fechaNacimiento').value,
+                ultimo_pago: document.getElementById('edit-profile-ultimo_pago').value,
+                deudas: document.getElementById('edit-profile-deudas').value.trim() || "0",
+                observaciones: document.getElementById('edit-profile-observaciones').value.trim(),
+                unidades_funcionales_array: ufsArray 
+            };
+
+            const validationErrors = validarDatosInquilino(nuevoInquilinoDataToValidate, -1); 
+            if (Object.keys(validationErrors).length > 0) {
+                displayValidationErrors(validationErrors);
+                showNotification("Por favor, corrija los errores en el formulario.", "error");
+                return;
+            }
+            
+            const nuevoInquilino = {
+                _id: `inquilino_${Date.now()}_${inquilinos.length + 1}`,
+                nombre: nombre,
+                apellido: apellido,
+                nombre_apellido: nombreCompleto,
+                documento: nuevoInquilinoDataToValidate.documento,
+                piso: nuevoInquilinoDataToValidate.piso,
+                telefono: nuevoInquilinoDataToValidate.telefono,
+                email: nuevoInquilinoDataToValidate.email,
+                fechaIngreso: nuevoInquilinoDataToValidate.fechaIngreso,
+                fechaNacimiento: nuevoInquilinoDataToValidate.fechaNacimiento,
+                ultimo_pago: nuevoInquilinoDataToValidate.ultimo_pago,
+                deudas: nuevoInquilinoDataToValidate.deudas,
+                observaciones: nuevoInquilinoDataToValidate.observaciones,
+                unidades_funcionales: ufsArray
+            };
+            inquilinos.push(nuevoInquilino);
+            guardarDatosAlmacenamientoLocal();
+            esNuevoInquilino = false; 
+            showNotification("Nuevo inquilino agregado con éxito.", "success");
+            mostrarInquilinos(); 
+            actualizarVistaActualSiEsNecesario();
+        }
+
+        function cancelarEdicionInquilinoActual() {
+            clearValidationErrors();
+            if (esNuevoInquilino) {
+                mostrarInquilinos(); 
+            } else if (inquilinoEditandoId !== null && inquilinos[inquilinoEditandoId]) {
+                renderTenantProfile(inquilinos[inquilinoEditandoId], false); 
+            } else {
+                mostrarInquilinos(); 
+            }
+        }
+
+        function confirmarEliminarInquilinoActual() {
+            if (inquilinoEditandoId === null || esNuevoInquilino || !inquilinos[inquilinoEditandoId]) {
+                showNotification("No hay un inquilino seleccionado para eliminar.", "error");
+                return;
+            }
+            const inquilino = inquilinos[inquilinoEditandoId];
+            if (confirm(`¿Está seguro de que desea eliminar a ${inquilino.nombre_apellido}? Esta acción no se puede deshacer y se desasignarán sus UFs.`)) {
+                eliminarInquilinoActual();
+            }
+        }
+
+        function eliminarInquilinoActual() {
+            if (inquilinoEditandoId === null || esNuevoInquilino || !inquilinos[inquilinoEditandoId]) {
+                return;
+            }
+            inquilinos.splice(inquilinoEditandoId, 1);
+            guardarDatosAlmacenamientoLocal();
+            showNotification("Inquilino eliminado con éxito.", "success");
+            
+            inquilinoEditandoId = null; 
+            mostrarInquilinos(); 
+            actualizarVistaActualSiEsNecesario(); 
+        }
+
+        // --- FUNCIONES DEL MODAL PARA ASIGNAR UF ---
+        function abrirModalAsignarUF(ufCode, ufType) {
+            // ... (código de abrirModalAsignarUF sin cambios) ...
+            ufParaAsignar = ufCode;
+            ufTipoParaAsignar = ufType; 
+            document.getElementById('modal-uf-code-display').textContent = ufCode;
+            
+            const selectInquilino = document.getElementById('select-inquilino-asignar');
+            selectInquilino.innerHTML = '<option value="">Seleccione un inquilino...</option>'; 
+            
+            inquilinos.forEach((tenant, index) => {
+                const option = document.createElement('option');
+                option.value = index; 
+                option.textContent = `${tenant.nombre_apellido} (Doc: ${tenant.documento || 'N/A'})`;
+                selectInquilino.appendChild(option);
+            });
+            
+            const modal = document.getElementById('modal-asignar-uf');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('active');
+            selectInquilino.focus();
+        }
+
+        function cerrarModalAsignarUF() {
+            // ... (código de cerrarModalAsignarUF sin cambios) ...
+            const modal = document.getElementById('modal-asignar-uf');
+            modal.classList.add('opacity-0');
+            modal.classList.remove('active');
+            setTimeout(() => { 
+                 modal.classList.add('pointer-events-none');
+            }, 300); 
+            ufParaAsignar = null;
+            ufTipoParaAsignar = null;
+        }
+
+        function confirmarAsignacionUF() {
+            // ... (código de confirmarAsignacionUF sin cambios, ya incluye guardarDatosAlmacenamientoLocal()) ...
+            const selectedTenantIndexStr = document.getElementById('select-inquilino-asignar').value;
+            if (selectedTenantIndexStr === "" || ufParaAsignar === null) {
+                showNotification("Por favor, seleccione un inquilino.", "error");
+                return;
+            }
+            const selectedTenantIndex = parseInt(selectedTenantIndexStr);
+            const tenant = inquilinos[selectedTenantIndex]; 
+
+            if (tenant) {
+                const existingAssignment = getTenantByUF(ufParaAsignar, selectedTenantIndex); 
+                if (existingAssignment) { 
+                     showNotification(`Error: ${ufParaAsignar} ya está asignada a ${existingAssignment.tenant.nombre_apellido}.`, "error");
+                     return;
+                }
+
+                if (!tenant.unidades_funcionales.includes(ufParaAsignar)) {
+                    tenant.unidades_funcionales.push(ufParaAsignar);
+                    guardarDatosAlmacenamientoLocal();
+                }
+                cerrarModalAsignarUF();
+                showNotification(`${ufParaAsignar} asignada a ${tenant.nombre_apellido} con éxito.`, "success");
+
+                if (ufTipoParaAsignar === 'departamento') renderDepartamentosTable();
+                else if (ufTipoParaAsignar === 'cochera') renderCocherasList();
+                else if (ufTipoParaAsignar === 'baulera') renderBaulerasList();
+                
+                if (document.getElementById('perfil-inquilino').style.display === 'block' && inquilinoEditandoId === selectedTenantIndex) {
+                    renderTenantProfile(tenant, false);
+                }
+                if (document.getElementById('inquilinos').style.display === 'block') {
+                    realizarBusqueda();
+                }
+                actualizarVistaActualSiEsNecesario();
+            } else {
+                showNotification("Error al encontrar el inquilino seleccionado.", "error");
+            }
+        }
+
+        // --- FUNCIONALIDAD DE BÚSQUEDA ---
+        function realizarBusqueda() {
+            // ... (código de realizarBusqueda sin cambios) ...
+            const inputBusqueda = document.getElementById('busqueda').value.toLowerCase().trim();
+            const resultadosDiv = document.getElementById('resultados-inquilinos');
+            const emptyState = document.getElementById('empty-state-inquilinos');
+            if (!resultadosDiv || !emptyState) return;
+            resultadosDiv.innerHTML = ''; 
+
+            const resultadosFiltrados = inquilinos.filter((inquilino) => {
+                if (inputBusqueda === "") return true; 
+                const matchNombre = (inquilino.nombre_apellido || "").toLowerCase().includes(inputBusqueda);
+                const matchUF = (inquilino.unidades_funcionales || []).some(uf => uf.toLowerCase().includes(inputBusqueda));
+                const matchPiso = (inquilino.piso || "").toString().toLowerCase().includes(inputBusqueda);
+                const matchTel = (inquilino.telefono || "").toLowerCase().includes(inputBusqueda);
+                const matchMail = (inquilino.email || "").toLowerCase().includes(inputBusqueda);
+                const matchDoc = (inquilino.documento || "").toLowerCase().includes(inputBusqueda);
+                return matchNombre || matchUF || matchPiso || matchTel || matchMail || matchDoc;
+            });
+
+            if (resultadosFiltrados.length === 0) {
+                resultadosDiv.style.display = 'none';
+                emptyState.style.display = 'block';
+                if (inputBusqueda !== "") {
+                     emptyState.innerHTML = `<i class="fas fa-search-minus fa-3x mb-3"></i><p>No se encontraron inquilinos que coincidan con "${inputBusqueda}".</p>`;
+                } else if (inquilinos.length === 0) {
+                     emptyState.innerHTML = `<i class="fas fa-users-slash fa-3x mb-3"></i><p>No hay inquilinos registrados. Agregue uno nuevo o use Panel Admin > Importar / Generar Demo.</p>`;
+                } else {
+                     emptyState.innerHTML = `<i class="fas fa-users fa-3x mb-3"></i><p>Todos los inquilinos se muestran. Use el buscador para filtrar.</p>`;
+                }
+            } else {
+                resultadosDiv.style.display = 'grid';
+                emptyState.style.display = 'none';
+                resultadosFiltrados.forEach((inquilino) => {
+                    const mainIndex = inquilinos.findIndex(item => item._id === inquilino._id);
+                    if (mainIndex !== -1) { 
+                        resultadosDiv.innerHTML += renderInquilinoCard(inquilino, mainIndex);
+                    }
+                });
+            }
+        }
+
+        // --- FUNCIONES PANEL ADMINISTRADOR ---
+        function abrirAdminPanelConPrompt() {
+            const password = prompt("Ingrese la contraseña de administrador:", "");
+            if (password === ADMIN_PASSWORD) {
+                abrirAdminPanel();
+            } else if (password !== null) { 
+                showNotification("Contraseña incorrecta.", "error");
+            }
+        }
+
+        function abrirAdminPanel() {
+            ocultarSecciones(); 
+            const modal = document.getElementById('admin-panel');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('active');
+            renderHistorialOperaciones(); 
+            cargarUltimaClaveBackup(); 
+        }
+
+        function cerrarAdminPanel() {
+            const modal = document.getElementById('admin-panel');
+            modal.classList.add('opacity-0');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.classList.add('pointer-events-none');
+            }, 300);
+        }
+
+        function confirmarGenerarDatosDemoAdmin() {
+            if (confirm("¿Está seguro de que desea borrar los datos actuales y generar nuevos datos de demostración (25 inquilinos)? Esta acción no se puede deshacer.")) {
+                crearBackupAntesDeImportar(); 
+                inquilinos = generarInquilinosAleatorios(25);
+                guardarDatosAlmacenamientoLocal();
+                showNotification("Nuevos datos de demostración generados y guardados.", "success");
+                agregarEntradaHistorial("Demo Generada", `25 inquilinos generados. Backup previo creado si había datos.`);
+                actualizarVistaActualSiEsNecesario(true); 
+            }
+        }
+
+        function confirmarBorrarTodosLosDatos() {
+            if (confirm("¡ADVERTENCIA! ¿Está seguro de que desea borrar TODOS los datos de inquilinos? Esta acción es irreversible.")) {
+                if (confirm("SEGUNDA ADVERTENCIA: Esto eliminará toda la información. ¿Continuar?")) {
+                    crearBackupAntesDeImportar(); 
+                    inquilinos = [];
+                    guardarDatosAlmacenamientoLocal();
+                    showNotification("Todos los datos han sido eliminados.", "success");
+                    agregarEntradaHistorial("Borrado Total", `Todos los inquilinos eliminados. Backup previo creado si había datos.`);
+                    actualizarVistaActualSiEsNecesario(true);
+                }
+            }
+        }
+
+        // --- FUNCIONES HISTORIAL Y BACKUP ---
+        function agregarEntradaHistorial(tipo, detalle) {
+            let historial = JSON.parse(localStorage.getItem(HISTORIAL_OPERACIONES_KEY)) || [];
+            const entrada = {
+                fecha: new Date().toLocaleString('es-AR'),
+                tipo: tipo, 
+                detalle: detalle 
+            };
+            historial.unshift(entrada); 
+            if (historial.length > MAX_HISTORIAL_ENTRADAS) {
+                historial.pop(); 
+            }
+            localStorage.setItem(HISTORIAL_OPERACIONES_KEY, JSON.stringify(historial));
+            renderHistorialOperaciones();
+        }
+
+        function renderHistorialOperaciones() {
+            const listaDiv = document.getElementById('historial-operaciones-lista');
+            const historial = JSON.parse(localStorage.getItem(HISTORIAL_OPERACIONES_KEY)) || [];
+            
+            if (!listaDiv) return; // Prevenir error si el panel no está renderizado aún
+
+            if (historial.length === 0) {
+                listaDiv.innerHTML = '<p class="text-gray-500">No hay operaciones registradas aún.</p>';
+                return;
+            }
+
+            listaDiv.innerHTML = historial.map(entrada => `
+                <div class="mb-2 pb-2 border-b border-gray-200 last:border-b-0">
+                    <p class="font-medium text-gray-700">${entrada.tipo} - <span class="text-xs text-gray-500">${entrada.fecha}</span></p>
+                    <p class="text-xs text-gray-600">${entrada.detalle}</p>
+                </div>
+            `).join('');
+        }
+
+        function crearBackupAntesDeImportar() { // Renombrado para claridad, usado antes de cualquier operación destructiva
+            if (inquilinos.length === 0) return null; 
+
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const claveBackup = `${BACKUP_KEY_PREFIX}${timestamp}`;
+            try {
+                localStorage.setItem(claveBackup, JSON.stringify(inquilinos));
+                ultimaClaveBackup = claveBackup; 
+                localStorage.setItem('gestionEdificioUltimaClaveBackup_GoatAppDemo1', ultimaClaveBackup); 
+                // showNotification("Copia de seguridad de datos actuales creada.", "info"); // Opcional, puede ser mucho ruido
+                actualizarBotonRestaurarBackup();
+                return claveBackup;
+            } catch (e) {
+                console.error("Error creando backup:", e);
+                showNotification("Error al crear copia de seguridad.", "error");
+                return null;
+            }
+        }
+        
+        function cargarUltimaClaveBackup() {
+            ultimaClaveBackup = localStorage.getItem('gestionEdificioUltimaClaveBackup_GoatAppDemo1');
+            actualizarBotonRestaurarBackup();
+        }
+
+        function actualizarBotonRestaurarBackup() {
+            const btnRestaurar = document.getElementById('btn-restaurar-backup');
+            if (btnRestaurar) {
+                btnRestaurar.style.display = ultimaClaveBackup ? 'flex' : 'none';
+            }
+        }
+        
+        function confirmarRestaurarBackup() {
+            if (!ultimaClaveBackup) {
+                showNotification("No hay una copia de seguridad reciente disponible para restaurar.", "info");
+                return;
+            }
+            if (confirm("¿Está seguro de que desea restaurar los datos desde la última copia de seguridad? Los datos actuales (si los hay) se sobrescribirán.")) {
+                const backupData = localStorage.getItem(ultimaClaveBackup);
+                if (backupData) {
+                    try {
+                        inquilinos = JSON.parse(backupData);
+                        guardarDatosAlmacenamientoLocal(); 
+                        showNotification("Datos restaurados desde la copia de seguridad.", "success");
+                        agregarEntradaHistorial("Restauración", `Datos restaurados desde backup ${ultimaClaveBackup.replace(BACKUP_KEY_PREFIX, '')}`);
+                        actualizarVistaActualSiEsNecesario(true);
+                    } catch (e) {
+                        showNotification("Error al restaurar la copia de seguridad. Los datos podrían estar corruptos.", "error");
+                    }
+                } else {
+                    showNotification("No se pudo encontrar la copia de seguridad.", "error");
+                }
+            }
+        }
+        
+        // --- IMPORTACIÓN Y EXPORTACIÓN DE DATOS ---
+        function activarImportacionJSON() {
+            document.getElementById('import-file-input').click();
+        }
+
+        function importarDatosJSON(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                showNotification("No se seleccionó ningún archivo.", "info");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const claveBackupRealizada = crearBackupAntesDeImportar(); 
+                    
+                    const importedData = JSON.parse(e.target.result);
+                    if (!Array.isArray(importedData)) {
+                        throw new Error("El archivo JSON debe contener un array de inquilinos.");
+                    }
+                    
+                    const datosValidos = importedData.every(inq => 
+                        typeof inq === 'object' && inq !== null &&
+                        typeof inq.nombre_apellido === 'string' &&
+                        Array.isArray(inq.unidades_funcionales) 
+                    );
+
+                    if (!datosValidos) {
+                         throw new Error("Formato de datos incorrecto en el archivo JSON.");
+                    }
+
+                    inquilinos = importedData; 
+                    guardarDatosAlmacenamientoLocal();
+                    showNotification(`Datos importados de "${file.name}" correctamente.`, "success");
+                    agregarEntradaHistorial("Importación", `Archivo: ${file.name}, Registros: ${importedData.length}. ${claveBackupRealizada ? 'Backup previo creado.' : 'Sin backup previo.'}`);
+                    event.target.value = null; 
+
+                    actualizarVistaActualSiEsNecesario(true); 
+
+                } catch (error) {
+                    showNotification(`Error al importar: ${error.message}`, "error");
+                    console.error("Error al importar JSON:", error);
+                    event.target.value = null; 
+                }
+            };
+            reader.onerror = () => {
+                showNotification("Error al leer el archivo.", "error");
+                event.target.value = null;
+            };
+            reader.readAsText(file);
+        }
+
+        function exportarDatosJSON() {
+            if (inquilinos.length === 0) {
+                showNotification("No hay datos de inquilinos para exportar.", "info");
+                return;
+            }
+
+            const nombreArchivoPorDefecto = `datos_inquilinos_GoatAppDemo1_${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.json`;
+            let nombreArchivoUsuario = prompt("Ingrese el nombre para el archivo de exportación:", nombreArchivoPorDefecto);
+
+            if (nombreArchivoUsuario === null) { 
+                showNotification("Exportación cancelada por el usuario.", "info");
+                return;
+            }
+            
+            nombreArchivoUsuario = nombreArchivoUsuario.trim();
+            if (nombreArchivoUsuario === "") { 
+                nombreArchivoUsuario = nombreArchivoPorDefecto;
+            }
+
+            if (!nombreArchivoUsuario.toLowerCase().endsWith('.json')) {
+                nombreArchivoUsuario += '.json';
+            }
+            
+            const jsonString = JSON.stringify(inquilinos, null, 2); 
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = nombreArchivoUsuario;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showNotification(`Datos exportados exitosamente como ${nombreArchivoUsuario}.`, "success");
+            agregarEntradaHistorial("Exportación", `Archivo: ${nombreArchivoUsuario}, Registros: ${inquilinos.length}`);
+        }
+
+        // --- MANEJADORES DE EVENTOS DELEGADOS ---
+        function handleTablaDepartamentosClick(event) {
+            // ... (código sin cambios) ...
+            const target = event.target;
+            const actionElement = target.closest('[data-action]');
+            if (!actionElement) return;
+
+            event.preventDefault();
+            const action = actionElement.dataset.action;
+            const inquilinoIndex = actionElement.dataset.inquilinoIndex ? parseInt(actionElement.dataset.inquilinoIndex) : null;
+            const ufCode = actionElement.dataset.ufCode;
+            const ufTipo = actionElement.dataset.ufTipo;
+
+            switch (action) {
+                case 'ver-perfil-desde-uf':
+                case 'ver-perfil':
+                    if (inquilinoIndex !== null && inquilinos[inquilinoIndex]) {
+                        mostrarPerfilInquilino(inquilinoIndex);
+                    }
+                    break;
+                case 'editar-inquilino':
+                    if (inquilinoIndex !== null && inquilinos[inquilinoIndex]) {
+                        mostrarPerfilInquilino(inquilinoIndex);
+                        setTimeout(() => editarDatosInquilinoActual(), 50); 
+                    }
+                    break;
+                case 'asignar-uf':
+                    abrirModalAsignarUF(ufCode, ufTipo);
+                    break;
+            }
+        }
+
+        function handleSimpleUFListClick(event) { 
+            // ... (código sin cambios) ...
+            const target = event.target;
+            const actionElement = target.closest('[data-action]');
+            if (!actionElement) return;
+            
+            if (actionElement.tagName === 'A' || actionElement.classList.contains('uf-link') || (actionElement.tagName !== 'BUTTON' && actionElement.dataset.action === 'ver-perfil')) {
+                 event.preventDefault();
+            }
+
+            const action = actionElement.dataset.action;
+            const inquilinoIndex = actionElement.dataset.inquilinoIndex ? parseInt(actionElement.dataset.inquilinoIndex) : null;
+            const ufCode = actionElement.dataset.ufCode;
+            const ufTipo = actionElement.dataset.ufTipo;
+
+            switch (action) {
+                case 'ver-perfil':
+                    if (inquilinoIndex !== null && inquilinos[inquilinoIndex]) {
+                        mostrarPerfilInquilino(inquilinoIndex);
+                    }
+                    break;
+                case 'asignar-uf':
+                    if(target.tagName === 'BUTTON' && target.classList.contains('assign-button')) {
+                        abrirModalAsignarUF(ufCode, ufTipo);
+                    }
+                    break;
+            }
+        }
+        
+        function handleResultadosInquilinosClick(event) {
+            // ... (código sin cambios) ...
+            const target = event.target;
+            const actionElement = target.closest('[data-action]');
+            if (!actionElement) return;
+
+            event.preventDefault(); 
+            const action = actionElement.dataset.action;
+            const inquilinoIndex = actionElement.dataset.inquilinoIndex ? parseInt(actionElement.dataset.inquilinoIndex) : null;
+            const ufId = actionElement.dataset.ufId;
+
+            switch(action) {
+                case 'ver-perfil':
+                    if (inquilinoIndex !== null && inquilinos[inquilinoIndex]) {
+                        mostrarPerfilInquilino(inquilinoIndex);
+                    }
+                    break;
+                case 'ver-uf':
+                    if (ufId && inquilinoIndex !== null) {
+                        verUF(ufId, inquilinoIndex);
+                    }
+                    break;
+            }
+        }
+        
+        function handlePerfilUFsClick(event) {
+            // ... (código sin cambios) ...
+            const target = event.target;
+            const actionElement = target.closest('[data-action="ver-uf"]');
+            if (!actionElement) return;
+
+            event.preventDefault();
+            const ufId = actionElement.dataset.ufId;
+            const inquilinoIndex = actionElement.dataset.inquilinoIndex ? parseInt(actionElement.dataset.inquilinoIndex) : null;
+            if (ufId && inquilinoIndex !== null) {
+                verUF(ufId, inquilinoIndex);
+            }
+        }
+
+        // --- ACTUALIZAR VISTA ---
+        function actualizarVistaActualSiEsNecesario(forzarTodo = false) {
+            // ... (código sin cambios) ...
+            if (forzarTodo || document.getElementById('departamentos').style.display === 'block') mostrarDepartamentos();
+            if (forzarTodo || document.getElementById('cocheras').style.display === 'block') mostrarCocheras();
+            if (forzarTodo || document.getElementById('bauleras').style.display === 'block') mostrarBauleras();
+            if (forzarTodo || document.getElementById('inquilinos').style.display === 'block') mostrarInquilinos();
+            
+            if (document.getElementById('perfil-inquilino').style.display === 'block') {
+                if (inquilinoEditandoId !== null && inquilinos[inquilinoEditandoId]) {
+                    renderTenantProfile(inquilinos[inquilinoEditandoId], false); 
+                } else if (forzarTodo) { 
+                    mostrarInquilinos(); 
+                }
+            }
+            if (forzarTodo || document.getElementById('fondos-totales').style.display === 'block') renderFondosTotales();
+        }
+        
+        // --- INICIALIZACIÓN DE LA APLICACIÓN ---
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!cargarDatosDesdeAlmacenamientoLocal()) {
+                // inquilinos = generarInquilinosAleatorios(25); // Opcional generar datos si no hay nada
+                // guardarDatosAlmacenamientoLocal();
+                // showNotification("Datos de demostración cargados. Puede importar sus propios datos.", "info", 5000);
+                showNotification("Bienvenido. No hay datos cargados. Use el Panel Admin para importar o generar datos de demostración.", "info", 7000);
+            }
+            
+            const currentYearEl = document.getElementById('currentYear');
+            if (currentYearEl) currentYearEl.textContent = new Date().getFullYear();
+            
+            const busquedaInput = document.getElementById('busqueda');
+            if (busquedaInput) busquedaInput.addEventListener('input', realizarBusqueda);
+
+            const importFileInput = document.getElementById('import-file-input');
+            if (importFileInput) importFileInput.addEventListener('change', importarDatosJSON);
+
+            document.getElementById('tabla-departamentos-body').addEventListener('click', handleTablaDepartamentosClick);
+            document.getElementById('lista-cocheras').addEventListener('click', handleSimpleUFListClick);
+            document.getElementById('lista-bauleras').addEventListener('click', handleSimpleUFListClick);
+            document.getElementById('resultados-inquilinos').addEventListener('click', handleResultadosInquilinosClick);
+            document.getElementById('datos-perfil').addEventListener('click', handlePerfilUFsClick); 
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    const modalAsignar = document.getElementById('modal-asignar-uf');
+                    const adminPanelModal = document.getElementById('admin-panel');
+
+                    if (modalAsignar && modalAsignar.classList.contains('active')) {
+                        cerrarModalAsignarUF();
+                    } else if (adminPanelModal && adminPanelModal.classList.contains('active')) {
+                        cerrarAdminPanel();
+                    }
+                    const cancelarBtn = document.getElementById('cancelar-btn');
+                    if (cancelarBtn && cancelarBtn.style.display !== 'none') {
+                        cancelarEdicionInquilinoActual();
+                    }
+                }
+            });
+            cargarUltimaClaveBackup(); 
+        });
+
+    </script>
+</body>
+</html>
